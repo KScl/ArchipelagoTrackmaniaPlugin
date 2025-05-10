@@ -1,0 +1,192 @@
+class SearchCriteria {
+    bool forceSafeURL = false; // Ignores all but map_tags, sets default etags
+
+    // Default options, always present in slot_data
+    string map_tags;
+    string map_etags;
+    string difficulties;
+    bool map_tags_inclusive;
+
+    // Advanced search parameters
+    string name;
+    string uploaded_after; // ISO date format
+    string uploaded_before; // ISO date format
+    int author;
+    int min_length;
+    int max_length;
+    bool has_award;
+    bool has_replay;
+
+    SearchCriteria(int seriesI, const Json::Value &in json, bool fromSlotData = false) {
+        try {
+            if (!fromSlotData) {
+                this.forceSafeURL = json["forceSafeURL"];
+                this.map_tags = json["preconverted_map_tags"];
+                this.map_etags = json["preconverted_map_etags"];
+                this.difficulties = json["preconverted_difficulties"];
+            }
+            else {
+                array<string> tag_list = JsonToStringArray(json["map_tags"]);
+                this.map_tags = BuildTagIdString(tag_list);
+                array<string> etag_list = JsonToStringArray(json["map_etags"]);
+                this.map_etags = BuildTagIdString(etag_list);
+                array<string> diff_list = JsonToStringArray(json["difficulties"]);
+                this.difficulties = BuildDifficultyString(diff_list);                
+            }
+            this.map_tags_inclusive = json["map_tags_inclusive"];
+
+            // Optional advanced search parameters
+            this.name = json.Get("name", "");
+            this.uploaded_after = json.Get("uploaded_after", "");
+            this.uploaded_before = json.Get("uploaded_before", "");
+            this.author = json.Get("author", 0);
+            this.min_length = json.Get("min_length", 0);
+            this.max_length = json.Get("max_length", 0);
+            this.has_award = json.Get("has_award", false);
+            this.has_replay = json.Get("has_replay", false);
+        }
+        catch {
+            Log::Error("Error parsing SearchCriteria for Series " + seriesI + "\nReason: " + getExceptionInfo());
+            this.forceSafeURL = true;
+        }
+    }
+
+    Json::Value ToJson() {
+        Json::Value json = Json::Object();
+        try {
+            json["forceSafeURL"] = this.forceSafeURL;
+
+            json["preconverted_map_tags"] = this.map_tags;
+            json["preconverted_map_etags"] = this.map_etags;
+            json["preconverted_difficulties"] = this.difficulties;
+            json["map_tags_inclusive"] = this.map_tags_inclusive;
+            json["name"] = this.name;
+            json["uploaded_after"] = this.uploaded_after;
+            json["uploaded_before"] = this.uploaded_before;
+            json["min_length"] = this.min_length;
+            json["max_length"] = this.max_length;
+            json["has_award"] = this.has_award;
+            json["has_replay"] = this.has_replay;
+        }
+        catch {
+
+        }
+    }
+
+    string BuildQueryURL() {
+        dictionary params;
+        params.Set("fields", MAP_FIELDS); //fields that the API will return in the json object
+        params.Set("random", "1");
+        params.Set("count", "1");
+        params.Set("maptype", SUPPORTED_MAP_TYPE);
+
+        //params.Set("vehicle", "1,2,3,4");//this locks out character pilot and black market maps
+#if MP4
+        params.Set("titlepack", CurrentTitlePack());
+#endif
+
+        //string tags = BuildTagIdString(this.map_tags);
+        params.Set("tag", this.map_tags);
+
+        if (!this.forceSafeURL) {
+            //string etags = BuildTagIdString(this.map_etags);
+            params.Set("etag", this.map_etags);
+            params.Set("difficulty", this.difficulties);
+            if (this.map_tags_inclusive)
+                params.Set("taginclusive", "true");
+
+            // Custom advanced search parameters
+            params.Set("name", this.name);
+            params.Set("uploadedafter", this.uploaded_after);
+            params.Set("uploadedbefore", this.uploaded_before);
+            if (this.author > 0)
+                params.Set("authoruserid", tostring(this.author));
+            if (this.min_length > 0)
+                params.Set("authortimemin", tostring(this.min_length));
+            if (this.max_length > 0)
+                params.Set("authortimemax", tostring(this.max_length));
+            if (this.has_award)
+                params.Set("inlatestawardedauthor", "true");                
+            if (this.has_replay)
+                params.Set("inhasreplay", "true");
+        }
+        else {
+            // Only use default etags and no other custom search parameters
+            params.Set("etag", ETAGS);
+        }
+
+        string urlParams = DictToApiParams(params);
+        return "https://" + MX_URL + "/api/maps" + urlParams;
+    }
+}
+
+
+// Extra helper functions
+
+string BuildTagIdString(array<string> tagList){
+    string result = "";
+
+    for (uint i = 0; i < tagList.Length; i++){
+        if (GetTags().Exists(tagList[i])){
+            result += "" + int(GetTags()[tagList[i]]) + ",";
+        }
+    }
+
+    if (result.Length > 0){
+        result = result.SubStr(0, result.Length - 1);
+    }
+
+    return result;
+}
+
+string BuildDifficultyString(array<string> difficultyList){
+    string result = "";
+
+    if (difficultyList.Length > 4) {
+        // Presumably an API bug, MX won't accept 5+ difficulties
+        return result;
+    }
+
+    for (uint i = 0; i < difficultyList.Length; i++){
+        if (TMX_DIFFICULTIES.Exists(difficultyList[i])){
+            result += "" + int(TMX_DIFFICULTIES[difficultyList[i]]) + ",";
+        }
+    }
+
+    if (result.Length > 0){
+        result = result.SubStr(0, result.Length - 1);
+    }
+
+    return result;
+}
+
+string DictToApiParams(dictionary params) {
+    string urlParams = "";
+    string nextParam = "?";
+
+    if (!params.IsEmpty()) {
+        auto keys = params.GetKeys();
+        for (uint i = 0; i < keys.Length; i++) {
+            string key = keys[i];
+            string value;
+            params.Get(key, value);
+
+            // Automatically omit empty parameters
+            if (value == "")
+                continue;
+
+            urlParams += nextParam + key + "=" + Net::UrlEncode(value.Trim());
+            nextParam = "&";
+        }
+    }
+
+    return urlParams;
+}
+
+array<string> JsonToStringArray(const Json::Value &in json) {
+    array<string> new_array = array<string>(json.Length);
+    for (uint i = 0; i < json.Length; i++) {
+        new_array[i] = json[i];
+    }
+    return new_array;
+}
