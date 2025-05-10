@@ -74,15 +74,13 @@ MapInfo@ QueryForRandomMap(SearchCriteria@ URLBuilder){
         }
         catch {
             Log::Error("Could not reach TMX, it might be down...", true);
-            isQueryingForMap = false;
-            return null;
+            break;
         }
 
         if (res.GetType() != Json::Type::Array || res.Length == 0) {
             if (URLBuilder.forceSafeURL) {
                 Log::Error("Unable to find any maps!", true);
-                isQueryingForMap = false;
-                return null;
+                break;
             }
 
             Log::Error("Search either returned no results or errored, entering safe mode and retrying...", true);
@@ -99,7 +97,7 @@ MapInfo@ QueryForRandomMap(SearchCriteria@ URLBuilder){
             continue;
         }
 
-        string mapUid = json["MapUid"];
+        string mapUid = mapJson["MapUid"];
         if (!reroll && data.previouslySeenMaps.Exists(mapUid)) {
             Log::Warn("Map was previously rolled, retrying once...");
             reroll = true;
@@ -115,10 +113,11 @@ MapInfo@ QueryForRandomMap(SearchCriteria@ URLBuilder){
             continue;
         }
 
-        break;
+        isQueryingForMap = false;
+        return map;
     }
     isQueryingForMap = false;
-    return map;
+    return null;
 }
 
 bool IsMapValid(Json::Value@ mapJson){

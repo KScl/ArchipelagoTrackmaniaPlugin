@@ -69,8 +69,10 @@ class SearchCriteria {
             json["has_replay"] = this.has_replay;
         }
         catch {
-
+            Log::Warn("Error converting SearchCriteria to json");
         }
+
+        return json;
     }
 
     string BuildQueryURL() {
