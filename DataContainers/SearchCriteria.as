@@ -193,7 +193,7 @@ array<string> JsonToStringArray(const Json::Value &in json) {
     return new_array;
 }
 
-bool JsonGetAsBool(const Json::Value &in json, string key) {
+bool JsonGetAsBool(const Json::Value &in json, const string &in key) {
     try {
         bool result = json.Get(key, false);
         return result;
