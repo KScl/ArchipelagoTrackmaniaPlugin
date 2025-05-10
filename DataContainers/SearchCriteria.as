@@ -20,10 +20,10 @@ class SearchCriteria {
     SearchCriteria(int seriesI, const Json::Value &in json, bool fromSlotData = false) {
         try {
             if (!fromSlotData) {
-                this.forceSafeURL = JsonGetAsBool(json["forceSafeURL"]);
                 this.map_tags = json["preconverted_map_tags"];
                 this.map_etags = json["preconverted_map_etags"];
                 this.difficulties = json["preconverted_difficulties"];
+                this.forceSafeURL = JsonGetAsBool(json, "forceSafeURL");
             }
             else {
                 array<string> tag_list = JsonToStringArray(json["map_tags"]);
@@ -33,7 +33,7 @@ class SearchCriteria {
                 array<string> diff_list = JsonToStringArray(json["difficulties"]);
                 this.difficulties = BuildDifficultyString(diff_list);                
             }
-            this.map_tags_inclusive = JsonGetAsBool(json["map_tags_inclusive"]);
+            this.map_tags_inclusive = JsonGetAsBool(json, "map_tags_inclusive");
 
             // Optional advanced search parameters
             this.name = json.Get("name", "");
@@ -42,8 +42,8 @@ class SearchCriteria {
             this.author = json.Get("author", 0);
             this.min_length = json.Get("min_length", 0);
             this.max_length = json.Get("max_length", 0);
-            this.has_award = JsonGetAsBool(json["has_award"]);
-            this.has_replay = JsonGetAsBool(json["has_replay"]);
+            this.has_award = JsonGetAsBool(json, "has_award");
+            this.has_replay = JsonGetAsBool(json, "has_replay");
         }
         catch {
             Log::Error("Error parsing SearchCriteria for Series " + seriesI + "\nReason: " + getExceptionInfo());
@@ -193,15 +193,13 @@ array<string> JsonToStringArray(const Json::Value &in json) {
     return new_array;
 }
 
-bool JsonGetAsBool(const Json::Value &in json) {
-    if (json is null)
-        return false;
+bool JsonGetAsBool(const Json::Value &in json, string key) {
     try {
-        bool result = json;
+        bool result = json.Get(key, false);
         return result;
     }
     catch {
-        int result = json;
+        int result = json.Get(key, 0);
         return result != 0;
     }
 }
