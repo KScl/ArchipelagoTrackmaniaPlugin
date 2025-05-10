@@ -108,9 +108,9 @@ class SearchCriteria {
             if (this.max_length > 0)
                 params.Set("authortimemax", tostring(this.max_length));
             if (this.has_award)
-                params.Set("inlatestawardedauthor", "true");                
+                params.Set("inlatestawardedauthor", "1");                
             if (this.has_replay)
-                params.Set("inhasreplay", "true");
+                params.Set("inhasreplay", "1");
         }
         else {
             // Only use default etags and no other custom search parameters
