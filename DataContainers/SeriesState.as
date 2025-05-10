@@ -79,6 +79,8 @@ class SeriesState{
         this.medalTotal = json["MedalTotal"];
         this.mapCount = json["MapCount"];
         @this.searchBuilder = SearchCriteria(seriesIndex, json["SearchCriteria"], true);
+        maps = array<MapState@>(mapCount);
+
         initialized = false;
         initializing = false;
     }
