@@ -42,8 +42,8 @@ class SearchCriteria {
             this.author = json.Get("author", 0);
             this.min_length = json.Get("min_length", 0);
             this.max_length = json.Get("max_length", 0);
-            this.has_award = JsonGetAsBool(json.Get("has_award", 0);
-            this.has_replay = JsonGetAsBool(json.Get("has_replay", 0);
+            this.has_award = JsonGetAsBool(json["has_award"]);
+            this.has_replay = JsonGetAsBool(json["has_replay"]);
         }
         catch {
             Log::Error("Error parsing SearchCriteria for Series " + seriesI + "\nReason: " + getExceptionInfo());
