@@ -118,7 +118,7 @@ class SearchCriteria {
             if (this.author > 0)
                 params.Set("authoruserid", tostring(this.author));
             if (this.map_pack > 0)
-                params.Set("mappackid", tostring(this.author));
+                params.Set("mappackid", tostring(this.map_pack));
             if (this.min_length > 0)
                 params.Set("authortimemin", tostring(this.min_length));
             if (this.max_length > 0)
