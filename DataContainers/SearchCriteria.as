@@ -204,7 +204,13 @@ string DictToApiParams(dictionary params) {
 array<string> JsonToStringArray(const Json::Value &in json) {
     array<string> new_array = array<string>(json.Length);
     for (uint i = 0; i < json.Length; i++) {
-        new_array[i] = tostring(json[i]);
+        try {
+            new_array[i] = json[i];
+        }
+        catch {
+            int temp = json[i];
+            new_array[i] = tostring(temp);
+        }
     }
     return new_array;
 }
