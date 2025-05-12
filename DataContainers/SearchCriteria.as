@@ -111,7 +111,7 @@ class SearchCriteria {
                 params.Set("taginclusive", "true");
 
             // Custom advanced search parameters
-            params.Set("id", this.map_ids)
+            params.Set("id", this.map_ids);
             params.Set("name", this.name);
             params.Set("uploadedafter", this.uploaded_after);
             params.Set("uploadedbefore", this.uploaded_before);
